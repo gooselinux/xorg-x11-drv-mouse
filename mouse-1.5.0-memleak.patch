@@ -1,0 +1,41 @@
+From c6ff6c3bba57a5134b050bead65dd6a1ff2f42aa Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 3 Dec 2009 11:27:30 +1000
+Subject: [PATCH] Plug minor memory leak.
+
+This change splits the DEVICE_CLOSE behaviour from the DEVICE_OFF behaviour.
+This doesn't change functionality as the server guarantees DEVICE_OFF to be
+called first and DEVICE_CLOSE thus becomes a noop anyway.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Alan Coopersmith <alan.coopersmith@sun.com>
+---
+ src/mouse.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/src/mouse.c b/src/mouse.c
+index 8347be9..7571aeb 100644
+--- a/src/mouse.c
++++ b/src/mouse.c
+@@ -1709,7 +1709,6 @@ MouseProc(DeviceIntPtr device, int what)
+ 	break;
+ 	    
+     case DEVICE_OFF:
+-    case DEVICE_CLOSE:
+ 	if (pInfo->fd != -1) {
+ 	    xf86RemoveEnabledDevice(pInfo);
+ 	    if (pMse->buffer) {
+@@ -1727,6 +1726,10 @@ MouseProc(DeviceIntPtr device, int what)
+ 	}
+ 	device->public.on = FALSE;
+ 	break;
++    case DEVICE_CLOSE:
++	xfree(pMse->mousePriv);
++	pMse->mousePriv = NULL;
++	break;
+     }
+     return Success;
+ }
+-- 
+1.6.6
+
